@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LUMINO — Concert Light System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@700&display=swap');
+
+  :root {
+    --bg: #050508;
+    --panel: #0d0d14;
+    --border: #1e1e2e;
+    --accent: #ff2d6b;
+    --text: #e0e0f0;
+    --dim: #555577;
+    --glow: rgba(255,45,107,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #role-screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .role-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 10vw, 6rem);
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, #ff2d6b, #ff8c42, #ffe04b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.2em;
+    text-align: center;
+  }
+
+  .role-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.4em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 4rem;
+  }
+
+  .role-cards {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 1rem;
+  }
+
+  .role-card {
+    width: 200px;
+    padding: 2.5rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: var(--panel);
+  }
+
+  .role-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 30px var(--glow);
+    transform: translateY(-4px);
+  }
+
+  .role-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+  .role-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .role-desc { font-size: 0.8rem; color: var(--dim); line-height: 1.5; }
+
+  #parent-ui { display: none; min-height: 100vh; padding: 2rem; max-width: 900px; margin: 0 auto; }
+
+  .ui-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2rem; padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ui-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem; letter-spacing: 0.15em;
+    background: linear-gradient(135deg, #ff2d6b, #ff8c42);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .conn-badge {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.75rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--dim);
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #2ed573; animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(46,213,115,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(46,213,115,0); }
+  }
+
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem; letter-spacing: 0.35em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 1rem;
+  }
+
+  .color-section, .mode-section, .speed-section, .preview-section {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+
+  .color-presets { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+  .preset-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+  }
+
+  .preset-btn.active, .preset-btn:hover {
+    transform: scale(1.15); border-color: white; box-shadow: 0 0 12px currentColor;
+  }
+
+  .custom-color-row { display: flex; align-items: center; gap: 1rem; }
+
+  .custom-color-row label {
+    font-size: 0.85rem; color: var(--dim);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  input[type="color"] {
+    width: 60px; height: 36px; border: 1px solid var(--border);
+    border-radius: 4px; background: none; cursor: pointer; padding: 2px;
+  }
+
+  .mode-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem;
+  }
+
+  .mode-btn {
+    padding: 1rem; background: transparent; border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  }
+
+  .mode-btn span { font-size: 1.4rem; }
+
+  .mode-btn:hover, .mode-btn.active {
+    background: rgba(255,45,107,0.1); border-color: var(--accent);
+    color: #fff; box-shadow: 0 0 15px rgba(255,45,107,0.2);
+  }
+
+  .speed-row { display: flex; align-items: center; gap: 1rem; }
+
+  input[type="range"] {
+    flex: 1; -webkit-appearance: none; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--accent);
+    cursor: pointer; box-shadow: 0 0 8px var(--glow);
+  }
+
+  .speed-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem; color: var(--accent); min-width: 60px; text-align: right;
+  }
+
+  .blackout-btn {
+    width: 100%; padding: 1.2rem; background: transparent;
+    border: 1px solid #333; border-radius: 4px; color: #666;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 1rem;
+    letter-spacing: 0.3em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 1.5rem;
+  }
+
+  .blackout-btn:hover { background: rgba(255,255,255,0.05); border-color: #555; color: #999; }
+  .blackout-btn.active { background: #111; border-color: var(--accent); color: var(--accent); }
+
+  .preview-phone {
+    width: 120px; height: 200px; background: #111;
+    border: 2px solid #333; border-radius: 20px;
+    margin: 0 auto; overflow: hidden; position: relative;
+  }
+
+  .preview-screen { position: absolute; inset: 6px; border-radius: 14px; transition: background 0.1s; }
+
+  #child-ui {
+    display: none; position: fixed; inset: 0;
+    transition: background 0.05s; cursor: none;
+    align-items: center; justify-content: center;
+  }
+
+  .child-label {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    letter-spacing: 0.3em; color: rgba(255,255,255,0.15);
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    pointer-events: none; user-select: none; white-space: nowrap;
+  }
+
+  .child-exit {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px; color: rgba(255,255,255,0.5);
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.5rem 0.75rem; cursor: pointer;
+    opacity: 0; transition: opacity 0.3s;
+  }
+
+  #child-ui:hover .child-exit { opacity: 1; }
+
+  .waiting {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 1rem; color: rgba(255,255,255,0.3);
+  }
+
+  .dots-row { display: flex; gap: 0.5rem; }
+
+  .waiting-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); animation: blink 1.4s infinite;
+  }
+
+  .waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+  .waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; }
+    40% { opacity: 1; }
+  }
+
+  .tip {
+    font-size: 0.75rem; color: var(--dim); line-height: 1.6;
+    padding: 1rem; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem;
+  }
+
+  .tip strong { color: var(--text); }
+
+  .child-count {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem; color: var(--dim); letter-spacing: 0.1em;
+  }
+
+  .child-count span { color: #2ed573; font-size: 1.1rem; }
+
+  .url-share {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+
+  .url-box {
+    display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem;
+  }
+
+  .url-text {
+    flex: 1; background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 0.6rem 0.8rem; font-size: 0.75rem;
+    color: var(--dim); font-family: monospace; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .copy-btn {
+    padding: 0.6rem 1rem; background: rgba(255,45,107,0.15);
+    border: 1px solid var(--accent); border-radius: 4px;
+    color: var(--accent); font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+
+  .copy-btn:hover { background: rgba(255,45,107,0.3); }
+</style>
+</head>
+<body>
+
+<div id="role-screen">
+  <div class="role-title">LUMINO</div>
+  <div class="role-sub">Concert Light System</div>
+  <div class="role-cards">
+    <div class="role-card" onclick="setRole('parent')">
+      <span class="role-icon">🎛️</span>
+      <div class="role-name">親機</div>
+      <div class="role-desc">照明を操作する<br>コントロールパネル</div>
+    </div>
+    <div class="role-card" onclick="setRole('child')">
+      <span class="role-icon">📱</span>
+      <div class="role-name">子機</div>
+      <div class="role-desc">画面がペンライトに<br>なるモード</div>
+    </div>
+  </div>
+</div>
+
+<div id="parent-ui">
+  <div class="ui-header">
+    <div class="ui-logo">LUMINO</div>
+    <div style="display:flex;align-items:center;gap:1.5rem;">
+      <div class="child-count">子機接続数: <span id="child-count-num">0</span></div>
+      <div class="conn-badge"><div class="conn-dot"></div>FIREBASE LIVE</div>
+    </div>
+  </div>
+
+  <div class="url-share">
+    <div class="section-label">子機用URL（スマホでこのURLを開いて「子機」を選ぶ）</div>
+    <div class="url-box">
+      <div class="url-text" id="share-url">このページのURL</div>
+      <button class="copy-btn" onclick="copyUrl()">コピー</button>
+    </div>
+  </div>
+
+  <div class="tip">
+    💡 <strong>使い方：</strong>上のURLをスマホのLINEやメールで送り、スマホで開いて「子機」を選ぶだけ！複数台同時OK。
+  </div>
+
+  <div class="color-section">
+    <div class="section-label">カラー</div>
+    <div class="color-presets" id="preset-colors"></div>
+    <div class="custom-color-row">
+      <label>カスタム</label>
+      <input type="color" id="custom-color" value="#ff2d6b" oninput="setCustomColor(this.value)">
+      <span style="font-family:'Barlow Condensed';font-size:0.9rem;color:var(--dim);" id="color-hex">#FF2D6B</span>
+    </div>
+  </div>
+
+  <div class="mode-section">
+    <div class="section-label">エフェクト</div>
+    <div class="mode-grid">
+      <button class="mode-btn active" onclick="setMode('solid')" id="mode-solid"><span>🔴</span>単色</button>
+      <button class="mode-btn" onclick="setMode('blink')" id="mode-blink"><span>⚡</span>点滅</button>
+      <button class="mode-btn" onclick="setMode('strobe')" id="mode-strobe"><span>💥</span>ストロボ</button>
+      <button class="mode-btn" onclick="setMode('fade')" id="mode-fade"><span>🌅</span>フェード</button>
+      <button class="mode-btn" onclick="setMode('rainbow')" id="mode-rainbow"><span>🌈</span>レインボー</button>
+      <button class="mode-btn" onclick="setMode('wave')" id="mode-wave"><span>🌊</span>ウェーブ</button>
+    </div>
+  </div>
+
+  <div class="speed-section">
+    <div class="section-label">スピード</div>
+    <div class="speed-row">
+      <span style="font-size:0.8rem;color:var(--dim);">SLOW</span>
+      <input type="range" id="speed-slider" min="1" max="20" value="5" oninput="setSpeed(this.value)">
+      <span style="font-size:0.8rem;color:var(--dim);">FAST</span>
+      <div class="speed-val" id="speed-label">×5</div>
+    </div>
+  </div>
+
+  <button class="blackout-btn" id="blackout-btn" onclick="toggleBlackout()">⬛ BLACKOUT</button>
+
+  <div class="preview-section">
+    <div class="section-label">プレビュー（子機画面イメージ）</div>
+    <div class="preview-phone">
+      <div class="preview-screen" id="preview-screen"></div>
+    </div>
+  </div>
+</div>
+
+<div id="child-ui">
+  <div class="waiting" id="waiting-msg">
+    <div style="font-family:'Barlow Condensed';letter-spacing:0.3em;text-transform:uppercase;font-size:0.9rem;">親機の接続を待っています</div>
+    <div class="dots-row">
+      <div class="waiting-dot"></div>
+      <div class="waiting-dot"></div>
+      <div class="waiting-dot"></div>
+    </div>
+  </div>
+  <div class="child-label">LUMINO — CHILD</div>
+  <button class="child-exit" onclick="exitChild()">EXIT</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, onDisconnect, push, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyClMTT8F1MZLjMQ-XSk3BxzuNv0iMS_9xU",
+  authDomain: "lumino-on-concert.firebaseapp.com",
+  databaseURL: "https://lumino-on-concert-default-rtdb.firebaseio.com",
+  projectId: "lumino-on-concert",
+  storageBucket: "lumino-on-concert.firebasestorage.app",
+  messagingSenderId: "4590894522",
+  appId: "1:4590894522:web:ed29a9a9ec8b5a6e3df183",
+  measurementId: "G-2F47560WP6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const COLORS = [
+  { hex: '#ff2d6b' }, { hex: '#ff8c42' }, { hex: '#ffe04b' },
+  { hex: '#2ed573' }, { hex: '#45b3e0' }, { hex: '#4080ff' },
+  { hex: '#9b59b6' }, { hex: '#ffffff' },
+];
+
+let state = { color: '#ff2d6b', mode: 'solid', speed: 5, blackout: false };
+let previewAnim = null;
+let childAnim = null;
+let childPhase = 0;
+let childReady = false;
+
+// ─── ROLE SELECT ──────────────────────────────────────
+window.setRole = function(role) {
+  document.getElementById('role-screen').style.display = 'none';
+
+  if (role === 'parent') {
+    document.getElementById('parent-ui').style.display = 'block';
+    document.getElementById('share-url').textContent = location.href;
+    buildPresets();
+    updatePreview();
+    watchChildCount();
+    pushState();
+  } else {
+    const el = document.getElementById('child-ui');
+    el.style.display = 'flex';
+    el.requestFullscreen?.().catch(() => {});
+    listenAsChild();
+  }
+};
+
+// ─── PARENT: push state to Firebase ──────────────────
+function pushState() {
+  set(ref(db, 'lumino/state'), state);
+}
+
+function watchChildCount() {
+  onValue(ref(db, 'lumino/children'), (snap) => {
+    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    document.getElementById('child-count-num').textContent = count;
+  });
+}
+
+// ─── CHILD: listen Firebase ───────────────────────────
+function listenAsChild() {
+  // register presence
+  const childRef = push(ref(db, 'lumino/children'));
+  set(childRef, { connected: true });
+  onDisconnect(childRef).remove();
+
+  onValue(ref(db, 'lumino/state'), (snap) => {
+    if (snap.exists()) {
+      applyChildState(snap.val());
+    }
+  });
+}
+
+// ─── PARENT CONTROLS ─────────────────────────────────
+function buildPresets() {
+  const wrap = document.getElementById('preset-colors');
+  COLORS.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (i === 0 ? ' active' : '');
+    btn.style.background = c.hex;
+    btn.onclick = () => {
+      state.color = c.hex;
+      document.getElementById('custom-color').value = c.hex;
+      document.getElementById('color-hex').textContent = c.hex.toUpperCase();
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updatePreview(); pushState();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+window.setCustomColor = function(hex) {
+  state.color = hex;
+  document.getElementById('color-hex').textContent = hex.toUpperCase();
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  updatePreview(); pushState();
+};
+
+window.setMode = function(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+  updatePreview(); pushState();
+};
+
+window.setSpeed = function(val) {
+  state.speed = parseInt(val);
+  document.getElementById('speed-label').textContent = '×' + val;
+  pushState();
+};
+
+window.toggleBlackout = function() {
+  state.blackout = !state.blackout;
+  const btn = document.getElementById('blackout-btn');
+  btn.classList.toggle('active', state.blackout);
+  btn.textContent = state.blackout ? '🔲 BLACKOUT ON — タップで解除' : '⬛ BLACKOUT';
+  updatePreview(); pushState();
+};
+
+window.copyUrl = function() {
+  navigator.clipboard.writeText(location.href).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'コピー済！';
+    setTimeout(() => btn.textContent = 'コピー', 2000);
+  });
+};
+
+window.exitChild = function() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  location.reload();
+};
+
+// ─── PREVIEW ─────────────────────────────────────────
+function updatePreview() {
+  clearInterval(previewAnim);
+  const screen = document.getElementById('preview-screen');
+  screen.style.transition = '';
+  if (state.blackout) { screen.style.background = '#000'; return; }
+  const interval = Math.max(50, 1200 / state.speed);
+  runEffect(screen, state, interval, (anim) => previewAnim = anim);
+}
+
+function runEffect(el, s, interval, onAnim) {
+  let ph = 0;
+  switch (s.mode) {
+    case 'solid': el.style.background = s.color; break;
+    case 'blink':
+      let bon = true; el.style.background = s.color;
+      onAnim(setInterval(() => { bon=!bon; el.style.background = bon ? s.color : '#000'; }, interval));
+      break;
+    case 'strobe':
+      let ston = true; el.style.background = '#fff';
+      onAnim(setInterval(() => { ston=!ston; el.style.background = ston ? '#fff' : '#000'; }, Math.max(30, 200/s.speed)));
+      break;
+    case 'fade':
+      el.style.transition = `background ${interval*2}ms ease-in-out`;
+      let fon = true; el.style.background = s.color;
+      onAnim(setInterval(() => { fon=!fon; el.style.background = fon ? s.color : '#000'; }, interval*2));
+      break;
+    case 'rainbow':
+      onAnim(setInterval(() => { ph=(ph+s.speed*2)%360; el.style.background=`hsl(${ph},100%,55%)`; }, 30));
+      break;
+    case 'wave':
+      onAnim(setInterval(() => { ph=(ph+s.speed*3)%360; el.style.background=`linear-gradient(135deg,hsl(${ph},100%,50%),hsl(${(ph+60)%360},100%,60%))`; }, 30));
+      break;
+  }
+}
+
+// ─── CHILD APPLY ─────────────────────────────────────
+function applyChildState(s) {
+  if (!childReady) {
+    childReady = true;
+    document.getElementById('waiting-msg').style.display = 'none';
+  }
+  clearInterval(childAnim);
+  const el = document.getElementById('child-ui');
+  el.style.transition = '';
+  if (s.blackout) { el.style.background = '#000'; return; }
+  const interval = Math.max(50, 1200 / s.speed);
+  runEffect(el, s, interval, (anim) => childAnim = anim);
+}
+</script>
+</body>
+</html>
